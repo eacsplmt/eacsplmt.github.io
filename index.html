@@ -300,20 +300,9 @@
     </div>
 
     <script>
-        // 文档列表：把 txt 文件名写在这里
-        const DOC_FILES = [
-            'example.txt',
-        ];
-
-        // 自动检测当前页面的基础路径
-        const BASE_PATH = (() => {
-            const path = window.location.pathname;
-            const repoMatch = path.match(/^\/([^/]+)\/([^/]+)\//);
-            if (repoMatch) {
-                return `/${repoMatch[1]}/${repoMatch[2]}/`;
-            }
-            return './';
-        })();
+        const REPO_OWNER = 'eacsplmt';
+        const REPO_NAME = 'eacsplmt.github.io';
+        const TXT_DIR = 'txt';
 
         const docList = document.getElementById('docList');
         const modalOverlay = document.getElementById('modalOverlay');
@@ -321,13 +310,32 @@
         const modalContent = document.getElementById('modalContent');
         const modalClose = document.getElementById('modalClose');
 
-        function renderDocList() {
-            if (DOC_FILES.length === 0) {
-                docList.innerHTML = '<li class="empty-msg">暂无文档</li>';
+        // 自动从 GitHub API 读取 txt/ 文件夹里的所有 .txt 文件
+        async function loadDocList() {
+            try {
+                const api = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TXT_DIR}`;
+                const res = await fetch(api);
+                if (!res.ok) throw new Error('API error');
+                const files = await res.json();
+
+                const txtFiles = files
+                    .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.txt'))
+                    .map(f => f.name)
+                    .sort((a, b) => a.localeCompare(b, 'zh'));
+
+                renderDocList(txtFiles);
+            } catch (err) {
+                docList.innerHTML = '<li class="empty-msg">❌ 无法读取 txt/ 文件夹，请确认文件夹存在</li>';
+            }
+        }
+
+        function renderDocList(files) {
+            if (files.length === 0) {
+                docList.innerHTML = '<li class="empty-msg">暂无文档，把 txt 文件放到 txt/ 文件夹即可</li>';
                 return;
             }
 
-            docList.innerHTML = DOC_FILES.map(file => {
+            docList.innerHTML = files.map(file => {
                 const displayName = file.replace(/\.txt$/i, '');
                 return `
                     <li>
@@ -349,7 +357,7 @@
         }
 
         async function openDoc(filename) {
-            const fullPath = BASE_PATH + 'txt/' + filename;
+            const fullPath = `${TXT_DIR}/${filename}`;
             try {
                 const response = await fetch(fullPath);
                 if (!response.ok) throw new Error('404');
@@ -359,7 +367,7 @@
                 modalOverlay.classList.add('active');
             } catch (err) {
                 modalTitle.textContent = filename;
-                modalContent.textContent = '❌ 无法读取该文件，请确认文件已推送到 txt/ 文件夹。';
+                modalContent.textContent = '❌ 无法读取该文件';
                 modalOverlay.classList.add('active');
             }
         }
@@ -380,7 +388,7 @@
             }
         });
 
-        renderDocList();
+        loadDocList();
     </script>
 </body>
 </html>

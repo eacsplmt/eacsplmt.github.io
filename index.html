@@ -64,6 +64,7 @@
             border-radius: 12px;
             padding: 24px;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .avatar {
@@ -97,6 +98,7 @@
             padding: 24px;
             margin-bottom: 20px;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .section h2 {
@@ -196,6 +198,7 @@
             align-items: center;
             padding: 20px;
             backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
 
         .modal-overlay.active {
@@ -262,6 +265,9 @@
                 flex-direction: column;
                 text-align: center;
             }
+            .section {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -310,13 +316,15 @@
         const modalContent = document.getElementById('modalContent');
         const modalClose = document.getElementById('modalClose');
 
-        // 自动从 GitHub API 读取 txt/ 文件夹里的所有 .txt 文件
+        // 带时间戳的 API 请求，绕过浏览器缓存
         async function loadDocList() {
             try {
-                const api = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TXT_DIR}`;
+                const api = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TXT_DIR}?t=${Date.now()}`;
                 const res = await fetch(api);
                 if (!res.ok) throw new Error('API error');
                 const files = await res.json();
+
+                if (!Array.isArray(files)) throw new Error('Invalid response');
 
                 const txtFiles = files
                     .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.txt'))
@@ -331,7 +339,7 @@
 
         function renderDocList(files) {
             if (files.length === 0) {
-                docList.innerHTML = '<li class="empty-msg">暂无文档，把 txt 文件放到 txt/ 文件夹即可</li>';
+                docList.innerHTML = '<li class="empty-msg">暂无文档</li>';
                 return;
             }
 
@@ -356,8 +364,9 @@
             });
         }
 
+        // 读文件内容也加时间戳
         async function openDoc(filename) {
-            const fullPath = `${TXT_DIR}/${filename}`;
+            const fullPath = `${TXT_DIR}/${encodeURIComponent(filename)}?t=${Date.now()}`;
             try {
                 const response = await fetch(fullPath);
                 if (!response.ok) throw new Error('404');

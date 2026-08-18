@@ -306,9 +306,8 @@
     </div>
 
     <script>
-        const REPO_OWNER = 'eacsplmt';
-        const REPO_NAME = 'eacsplmt.github.io';
         const TXT_DIR = 'txt';
+        const LIST_FILE = `${TXT_DIR}/list.json`;
 
         const docList = document.getElementById('docList');
         const modalOverlay = document.getElementById('modalOverlay');
@@ -316,24 +315,22 @@
         const modalContent = document.getElementById('modalContent');
         const modalClose = document.getElementById('modalClose');
 
-        // 带时间戳的 API 请求，绕过浏览器缓存
+        // 从 list.json 读取文件名列表
         async function loadDocList() {
             try {
-                const api = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TXT_DIR}?t=${Date.now()}`;
-                const res = await fetch(api);
-                if (!res.ok) throw new Error('API error');
+                const res = await fetch(`${LIST_FILE}?t=${Date.now()}`);
+                if (!res.ok) throw new Error('404');
                 const files = await res.json();
 
-                if (!Array.isArray(files)) throw new Error('Invalid response');
+                if (!Array.isArray(files)) throw new Error('Invalid format');
 
                 const txtFiles = files
-                    .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.txt'))
-                    .map(f => f.name)
+                    .filter(f => typeof f === 'string' && f.toLowerCase().endsWith('.txt'))
                     .sort((a, b) => a.localeCompare(b, 'zh'));
 
                 renderDocList(txtFiles);
             } catch (err) {
-                docList.innerHTML = '<li class="empty-msg">❌ 无法读取 txt/ 文件夹，请确认文件夹存在</li>';
+                docList.innerHTML = '<li class="empty-msg">❌ 无法读取 txt/list.json，请确认文件存在且格式正确</li>';
             }
         }
 
@@ -364,7 +361,6 @@
             });
         }
 
-        // 读文件内容也加时间戳
         async function openDoc(filename) {
             const fullPath = `${TXT_DIR}/${encodeURIComponent(filename)}?t=${Date.now()}`;
             try {

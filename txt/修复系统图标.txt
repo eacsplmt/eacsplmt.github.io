@@ -1,0 +1,26 @@
+@echo off
+chcp 65001 >nul
+title Windows 图标缓存清理
+
+echo ========================================
+echo      正在清理 Windows 图标缓存
+echo ========================================
+echo.
+
+echo [1/2] 关闭资源管理器...
+taskkill /f /im explorer.exe >nul 2>&1
+timeout /t 1 /nobreak >nul
+
+echo [2/2] 清理图标缓存...
+del /f /s /q /a "%LocalAppData%\IconCache.db" 2>nul
+del /f /s /q /a "%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
+del /f /s /q /a "%LocalAppData%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
+
+echo.
+echo 重启资源管理器...
+start explorer.exe
+
+echo.
+echo 图标缓存清理完成！
+timeout /t 2 /nobreak >nul
+exit
